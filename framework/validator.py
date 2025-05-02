@@ -2,12 +2,11 @@ import os
 import re
 import uuid
 
-
 class ConfigValidator:
     # Допустимые булевы значения (в любом регистре)
     BOOL_VALUES = {'true', 'false', 'yes', 'no'}
     # RFC 3066 locale формат: en, en-US, ru-RU и т.д.
-    RFC_3066_REGEX = re.compile(r'^[a-zA-Z]{1,8}(_[a-zA-Z0-9]{1,8})?(\.[a-zA-Z0-9-]+)?$')
+    RFC_3066_REGEX = re.compile(r'^[a-zA-Z]{1,3}(_[a-zA-Z0-9]{1,3})?(\.[a-zA-Z0-9-]+)?$')
 
     # Параметры, обязательные для каждой секции
     REQUIRED_SECTIONS = ['General', 'Watchdog']
@@ -16,7 +15,7 @@ class ConfigValidator:
 
     def __init__(self, config: dict):
         self.config = config
-        self.errors = []
+        self.errors = {}
 
     def validate(self):
         self.errors.clear()
@@ -24,7 +23,7 @@ class ConfigValidator:
         # Проверяем, что присутствуют все секции
         for section in self.REQUIRED_SECTIONS:
             if section not in self.config:
-                self.errors.append(f"Отсутствует секция: {section}")
+                self.errors[f'Missing {section}'] = f"Отсутствует секция: {section}"
         
         self._check_unexpected_parameters_and_duplicates()
         self._validate_general()
@@ -44,13 +43,13 @@ class ConfigValidator:
             duplicates = params.get('__duplicates__', {})
             for key, count in duplicates.items():
                 if count > 1:
-                    self.errors.append(f"{section}.{key} указан {count} раз(а)")
+                    self.errors[f'Repeated {section}.{key}'] =  f"{section}.{key} указан {count} раз(а)"
 
             for key in params:
                 if key == '__duplicates__':
                     continue
                 if section in expected and key not in expected[section]:
-                    self.errors.append(f"{section}.{key} не должен находиться в этой секции")
+                    self.errors[f'Incorrect location {section}.{key}'] = f"{section}.{key} не должен находиться в этой секции"
 
     def _validate_general(self):
         section = 'General'
@@ -60,7 +59,8 @@ class ConfigValidator:
         # Проверяем обязательные параметры в секции General
         for param in self.REQUIRED_PARAMS_GENERAL:
             if param not in self.config[section]:
-                self._add_error(section, param, "обязательный параметр, отсутствует")
+                self.errors[f'Missing {section}.{param}'] = f"{section}.{param} обязательный параметр, отсутствует"
+                # self._add_error(section, param, "обязательный параметр, отсутствует")
 
         self._check_int_range(section, 'ScanMemoryLimit', 1024, 8192)
         self._check_enum(section, 'PackageType', {'rpm', 'deb'})
@@ -97,7 +97,7 @@ class ConfigValidator:
         # Проверяем обязательные параметры в секции Watchdog
         for param in self.REQUIRED_PARAMS_WATCHDOG:
             if param not in self.config[section]:
-                self._add_error(section, param, "обязательный параметр, отсутствует")
+                self.errors[f'Missing {section}.{param}'] = f"{section}.{param} обязательный параметр, отсутствует"
 
         value = self._get_value(section, 'ConnectTimeout')
         if not value or not re.fullmatch(r'\d+m', value):
@@ -120,7 +120,8 @@ class ConfigValidator:
         return self.config.get(section, {}).get(key, '').strip()
 
     def _add_error(self, section, key, message):
-        self.errors.append(f"{section}.{key} {message}")
+
+        self.errors[key] = self.errors.get(key, []) + [f"{section}.{key} {message}"]
 
     def _check_int_range(self, section, key, min_val, max_val):
         value: str = self._get_value(section, key)
