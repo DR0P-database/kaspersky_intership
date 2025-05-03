@@ -6,4 +6,4 @@ venv:
 	source ./venv/bin/activate && pip install -r requirements.txt
 
 test:
-	pytest -v
+	pytest -v --html=report_tests.html --self-contained-html
