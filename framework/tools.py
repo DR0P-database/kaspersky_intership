@@ -3,6 +3,14 @@ from dotenv import load_dotenv
 
 DEFAULT_PATH = '/var/opt/kaspersky/config.ini'
 
+from collections import UserDict
+
+class SingleInsertDict(UserDict):
+    def __setitem__(self, key, value):
+        if key in self.data:
+            raise KeyError(f"Повторное добавление ключа запрещено: {key}")
+        super().__setitem__(key, value)
+
 
 
 def get_config_path():
@@ -12,7 +20,7 @@ def get_config_path():
     return path_to_config
 
 def parse_config(path_to_config) -> dict:
-    result = {}
+    result = SingleInsertDict()
     current_section = None
 
     with open(path_to_config, 'r', encoding='utf-8') as f:
@@ -24,8 +32,7 @@ def parse_config(path_to_config) -> dict:
 
             if line.startswith('[') and line.endswith(']'):
                 current_section = line[1:-1].strip()
-                result[current_section] = {}
-                result[current_section]['__duplicates__'] = {}
+                result[current_section] = SingleInsertDict()
             elif '=' in line:
                 if not current_section:
                     # Пропускаем параметр вне секции
@@ -33,12 +40,6 @@ def parse_config(path_to_config) -> dict:
                 
                 key, value = map(str.strip, line.split('=', 1))
                 section = result[current_section]
-
-                if key in section:
-                    # Увеличиваем счётчик дубликатов
-                    section['__duplicates__'][key] = section['__duplicates__'].get(key, 1) + 1
-                else:
-                    section['__duplicates__'][key] = 1
 
                 section[key] = value
             

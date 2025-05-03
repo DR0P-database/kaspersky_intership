@@ -63,15 +63,13 @@ def test_missing_watchdog_param(valid_config_dict, param):
 
 @pytest.mark.parametrize("param", ConfigValidator.REQUIRED_PARAMS_GENERAL)
 def test_duplicate_param_general(valid_config_dict, param):
-    valid_config_dict['General']['__duplicates__'][param] = 2
-    with pytest.raises(ValueError, match=f"{param}.*указан 2 раз"):
-        run_validator(valid_config_dict)
+    with pytest.raises(KeyError, match=rf"запрещено: {param}"):
+        valid_config_dict['General'][param] = 'DUPLICATE'
 
 @pytest.mark.parametrize("param", ConfigValidator.REQUIRED_PARAMS_WATCHDOG)
 def test_duplicate_param_watchdog(valid_config_dict, param):
-    valid_config_dict['Watchdog']['__duplicates__'][param] = 2
-    with pytest.raises(ValueError, match=f"{param}.*указан 2 раз"):
-        run_validator(valid_config_dict)
+    with pytest.raises(KeyError, match=rf"запрещено: {param}"):
+        valid_config_dict['Watchdog'][param] = 'DUPLICATE'
 
 @pytest.mark.parametrize("wrong_section, param", [
     ("Watchdog", "ScanMemoryLimit"),

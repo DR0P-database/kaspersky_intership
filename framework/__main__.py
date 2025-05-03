@@ -6,6 +6,3 @@ validator = ConfigValidator(config)
 
 if validator.validate():
     print("Успешно")
-    print(config)
-else:
-    print(validator.errors)

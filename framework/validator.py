@@ -36,11 +36,6 @@ class ConfigValidator:
             if not isinstance(params, dict):
                 continue
 
-            duplicates = params.get('__duplicates__', {})
-            for key, count in duplicates.items():
-                if count > 1:
-                    raise ValueError(f"{section}.{key} указан {count} раз(а)")
-
             for key in params:
                 if key == '__duplicates__':
                     continue
