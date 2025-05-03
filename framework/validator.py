@@ -2,6 +2,8 @@ import os
 import re
 import uuid
 
+from framework.tools import SingleInsertDict
+
 class ConfigValidator:
     BOOL_VALUES = {'true', 'false', 'yes', 'no'}
     RFC_3066_REGEX = re.compile(r'^[a-zA-Z]{1,3}(_[a-zA-Z0-9]{1,3})?(\.[a-zA-Z0-9-]+)?$')
@@ -21,24 +23,22 @@ class ConfigValidator:
             if section not in self.config:
                 raise ValueError(f"Отсутствует секция: {section}")
         
-        self._check_unexpected_parameters_and_duplicates()
+        self._check_unexpected_parameters()
         self._validate_general()
         self._validate_watchdog()
         return True
 
-    def _check_unexpected_parameters_and_duplicates(self):
+    def _check_unexpected_parameters(self):
         expected = {
             'General': set(self.REQUIRED_PARAMS_GENERAL),
             'Watchdog': set(self.REQUIRED_PARAMS_WATCHDOG),
         }
 
         for section, params in self.config.items():
-            if not isinstance(params, dict):
+            if not isinstance(params, SingleInsertDict):
                 continue
 
             for key in params:
-                if key == '__duplicates__':
-                    continue
                 if section in expected and key not in expected[section]:
                     raise ValueError(f"{section}.{key} не должен находиться в этой секции")
 

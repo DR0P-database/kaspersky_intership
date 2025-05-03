@@ -5,10 +5,6 @@ from framework.tools import parse_config
 from framework.validator import ConfigValidator
 from tests.conftest import VALID_BASE, VALID_DICT_CONFIG
 
-
-# === Общая валидная основа для тестов ===
-
-
 def test_config_file_not_found(tmp_path):
     non_existing_path = tmp_path / "not_here.ini"
     with pytest.raises(FileNotFoundError):
@@ -27,7 +23,7 @@ def test_validator(valid_config_dict):
 
 def run_validator(config_dict):
     validator = ConfigValidator(config_dict)
-    validator.validate()
+    return validator.validate()
 
 def test_parse_config_invalid(tmp_path):
     config = """
@@ -86,11 +82,14 @@ def test_unknown_param_invalid(valid_config_dict):
     with pytest.raises(ValueError, match=r"Foo.*не должен находиться в этой секции"):
         run_validator(valid_config_dict)
 
-# def test_unknown_param_ignored(valid_config_dict):
-#     valid_config_dict['Other'] = {}
-#     valid_config_dict['Other']['Foo'] = 'bar'
-#     # Не должно быть исключения
-#     assert run_validator(valid_config_dict) == True
+def test_unknown_param_ignored(valid_config_dict):
+    valid_config_dict['[Other]'] = {}
+    valid_config_dict['[Other]']['Foo'] = 'bar'
+
+    # Не должно быть исключения
+    assert run_validator(valid_config_dict) == True
+
+
 # @pytest.mark.parametrize("value", ["99999", "abc"])
 # def test_scanmemorylimit_invalid(tmp_path, value):
 #     config = VALID_BASE.replace("ScanMemoryLimit=2048", f"ScanMemoryLimit={value}")
