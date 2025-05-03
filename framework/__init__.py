@@ -1,2 +1,1 @@
-from . import tools
-from . import validator
+from . import tools, validator
